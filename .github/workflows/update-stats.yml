@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 1. Stats Card
+      # 1. Generate Stats Card
       - name: GitHub Stats Card
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -26,7 +26,7 @@ jobs:
           options: >-
             username=0x5ubt13&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark&hide_rank=true
 
-      # 2. Languages Card
+      # 2. Generate Top Languages Card
       - name: Top Languages Card
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -36,7 +36,7 @@ jobs:
           options: >-
             username=0x5ubt13&layout=compact&langs_count=5&theme=chartreuse-dark
 
-      # 3. Streak + Trophies (Combined into metrics.svg)
+      # 3. Generate Streak + Trophies (Letting it commit itself)
       - name: Combined Metrics
         uses: lowlighter/metrics@latest
         with:
@@ -47,11 +47,13 @@ jobs:
           plugin_trophies: yes
           plugin_trophies_skin: dark
           config_timezone: UTC
-          output_action: none 
+          # We tell it to commit directly to avoid the "missing file" issue
+          output_action: commit
+          committer_gist: ${{ secrets.PAT_TOKEN }}
 
-      # 4. Push all files
-      - name: Commit and Push
+      # 4. Push the Stats and Language SVGs
+      - name: Commit and Push remaining files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Updated Stats, Languages, and Metrics"
-          file_pattern: '*.svg'
+          commit_message: "Update Stats and Languages"
+          file_pattern: 'stats.svg languages.svg'
