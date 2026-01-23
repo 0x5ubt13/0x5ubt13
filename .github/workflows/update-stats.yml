@@ -1,7 +1,7 @@
 name: Update GitHub Stats
 on:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
   push:
     branches: [main, master]
@@ -36,7 +36,8 @@ jobs:
           options: >-
             username=0x5ubt13&layout=compact&langs_count=5&theme=chartreuse-dark
 
-      # 3. Generate Streak + Trophies (Letting it commit itself)
+      # 3. Generate Metrics (Streak + Trophies)
+      # IMPORTANT: output_action is set to 'none' so it doesn't try to commit yet
       - name: Combined Metrics
         uses: lowlighter/metrics@latest
         with:
@@ -47,13 +48,11 @@ jobs:
           plugin_trophies: yes
           plugin_trophies_skin: dark
           config_timezone: UTC
-          # We tell it to commit directly to avoid the "missing file" issue
-          output_action: commit
-          committer_gist: ${{ secrets.PAT_TOKEN }}
+          output_action: none 
 
-      # 4. Push the Stats and Language SVGs
-      - name: Commit and Push remaining files
+      # 4. ONE SINGLE COMMIT for all generated files
+      - name: Commit and Push all changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update Stats and Languages"
-          file_pattern: 'stats.svg languages.svg'
+          commit_message: "Charts update: stats, languages, and metrics"
+          file_pattern: 'stats.svg languages.svg metrics.svg'
