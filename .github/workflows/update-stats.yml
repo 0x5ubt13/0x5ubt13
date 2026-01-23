@@ -44,7 +44,7 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           filename: streak.svg
           base: "" 
-          plugin_st_streak: yes
+          plugin_streak: yes
           config_timezone: UTC
           output_action: none 
 
