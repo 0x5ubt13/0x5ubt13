@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Ensures we have full history to avoid push conflicts
 
       # 1. Generate Stats Card
       - name: GitHub Stats Card
@@ -24,7 +24,7 @@ jobs:
           path: stats.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=0x5ubt13&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark&hide_rank=true
+            username=0x5ubt13&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark&hide=html,scss,&hide_rank=true
 
       # 2. Generate Top Languages Card
       - name: Top Languages Card
@@ -36,23 +36,21 @@ jobs:
           options: >-
             username=0x5ubt13&layout=compact&langs_count=5&theme=chartreuse-dark
 
-      # 3. Generate Metrics (Streak + Trophies)
-      # IMPORTANT: output_action is set to 'none' so it doesn't try to commit yet
-      - name: Combined Metrics
+      # 3. Generate Streak (Using Metrics)
+      # We set "output_action: none" so it doesn't try to commit yet
+      - name: Streak Metrics
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          filename: metrics.svg
+          filename: streak.svg
           base: "" 
-          plugin_streak: yes
-          plugin_trophies: yes
-          plugin_trophies_skin: dark
+          plugin_st_streak: yes
           config_timezone: UTC
           output_action: none 
 
-      # 4. ONE SINGLE COMMIT for all generated files
+      # 4. One single commit for all files
       - name: Commit and Push all changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Charts update: stats, languages, and metrics"
-          file_pattern: 'stats.svg languages.svg metrics.svg'
+          commit_message: "Charts update: stats, languages, and streak"
+          file_pattern: '*.svg'
