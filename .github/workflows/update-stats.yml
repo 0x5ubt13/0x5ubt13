@@ -1,33 +1,35 @@
 name: Update GitHub Stats
+
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # Runs daily at midnight
   workflow_dispatch:
   push:
     branches: [main, master]
 
 jobs:
-  publish:
+  update-stats:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Ensures we have full history to avoid push conflicts
+          fetch-depth: 0 # CRITICAL: Required for the git merge logic to work
 
-      # 1. Generate Stats Card
-      - name: GitHub Stats Card
+      # 1. Generate Stats (Runs locally via Node.js)
+      - name: Generate Stats
         uses: readme-tools/github-readme-stats-action@v1
         with:
           card: stats
           path: stats.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=0x5ubt13&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark&hide=html,scss,&hide_rank=true
+            username=0x5ubt13&hide_title=false&hide_rank=true&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark
 
-      # 2. Generate Top Languages Card
-      - name: Top Languages Card
+      # 2. Generate Languages (Runs locally via Node.js)
+      - name: Generate Languages
         uses: readme-tools/github-readme-stats-action@v1
         with:
           card: top-langs
@@ -36,21 +38,51 @@ jobs:
           options: >-
             username=0x5ubt13&layout=compact&langs_count=5&theme=chartreuse-dark
 
-      # 3. Generate Streak (Using Metrics)
-      # We set "output_action: none" so it doesn't try to commit yet
-      - name: Streak Metrics
+      # 3. Generate Streak (Runs locally via Metrics action)
+      - name: Generate Streak
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
           filename: streak.svg
-          base: "" 
-          plugin_st_streak: yes
+          base: "" # Disable header, just plugins
+          plugin_streak: yes
+          plugin_streak_mode: weekly
+          output_action: none # Do not commit yet
           config_timezone: UTC
-          output_action: none 
+          config_theme: dark # Metrics built-in dark theme
 
-      # 4. One single commit for all files
-      - name: Commit and Push all changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+      # 4. Generate Achievements (Replaces Trophies - Runs locally via Metrics)
+      - name: Generate Achievements
+        uses: lowlighter/metrics@latest
         with:
-          commit_message: "Charts update: stats, languages, and streak"
-          file_pattern: '*.svg'
+          token: ${{ secrets.PAT_TOKEN }}
+          filename: achievements.svg
+          base: ""
+          plugin_achievements: yes
+          plugin_achievements_display: compact
+          output_action: none # Do not commit yet
+          config_theme: dark
+
+      # 5. The "No-Fail" Commit Step
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage the specific files we generated
+          git add stats.svg languages.svg streak.svg achievements.svg
+          
+          # Check if there are actual changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit. Exiting."
+            exit 0
+          fi
+          
+          # Commit locally
+          git commit -m "Update GitHub statistics"
+          
+          # CRITICAL: Rebase pulls remote changes (if any) and applies our commit on top
+          git pull --rebase origin main
+          
+          # Push safely
+          git push origin main
