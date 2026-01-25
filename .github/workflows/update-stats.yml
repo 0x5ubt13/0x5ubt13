@@ -36,15 +36,26 @@ jobs:
           options: >-
             username=0x5ubt13&layout=compact&hide=html,scss&langs_count=5&theme=chartreuse-dark
       
-      # 3. Generate Streak (Self-hosted DenverCoder1 style)
-      - name: Generate Streak
-        uses: DenverCoder1/github-readme-streak-stats-action@main
+      # 3. Generate Streak (Self-hosted with weekly mode)
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          user: 0x5ubt13
-          theme: chartreuse-dark
-          hide_border: false
-          date_format: M j[, Y]
-          output: streak.svg
+          php-version: '8.2'
+          extensions: curl, gd, mbstring
+          
+      - name: Clone and Generate Streak
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git clone https://github.com/DenverCoder1/github-readme-streak-stats.git temp-streak
+          cd temp-streak
+          composer install --no-dev
+          php -S localhost:8000 -t . &
+          sleep 5
+          curl -o ../streak.svg "http://localhost:8000/?user=0x5ubt13&theme=chartreuse-dark&mode=weekly&hide_border=false&date_format=M%20j%5B%2C%20Y%5D"
+          kill %1
+          cd ..
+          rm -rf temp-streak
           
       # 4. Generate Achievements (Metrics Action)
       - name: Generate Achievements
