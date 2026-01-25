@@ -13,12 +13,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # CRITICAL: Required for the git merge logic to work
+          fetch-depth: 0 
 
-      # 1. Generate Stats (Runs locally via Node.js)
+      # 1. Generate Stats (Standard Action)
       - name: Generate Stats
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -28,7 +28,7 @@ jobs:
           options: >-
             username=0x5ubt13&hide_title=false&hide_rank=true&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark
 
-      # 2. Generate Languages (Runs locally via Node.js)
+      # 2. Generate Languages (Standard Action)
       - name: Generate Languages
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -36,53 +36,60 @@ jobs:
           path: languages.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=0x5ubt13&layout=compact&langs_count=5&theme=chartreuse-dark
+            username=0x5ubt13&layout=compact&hide=html,scss&langs_count=5&theme=chartreuse-dark
 
-      # 3. Generate Streak (Runs locally via Metrics action)
+      # 3. Generate Streak (Metrics Action)
       - name: Generate Streak
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
+          user: 0x5ubt13  # <--- CRITICAL FIX: Explicit username
           filename: streak.svg
-          base: "" # Disable header, just plugins
+          base: "" 
           plugin_streak: yes
           plugin_streak_mode: weekly
-          output_action: none # Do not commit yet
+          output_action: none # Output to file, don't commit yet
           config_timezone: UTC
-          config_theme: dark # Metrics built-in dark theme
+          config_theme: dark
+          debug: yes # Helps diagnosis in logs
 
-      # 4. Generate Achievements (Replaces Trophies - Runs locally via Metrics)
+      # 4. Generate Achievements (Metrics Action)
       - name: Generate Achievements
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
+          user: 0x5ubt13  # <--- CRITICAL FIX: Explicit username
           filename: achievements.svg
           base: ""
           plugin_achievements: yes
           plugin_achievements_display: compact
-          output_action: none # Do not commit yet
+          output_action: none
           config_theme: dark
 
-      # 5. The "No-Fail" Commit Step
+      # 5. Debug & Commit
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Stage the specific files we generated
-          git add stats.svg languages.svg streak.svg achievements.svg
+          echo "--- DEBUG: Listing generated files ---"
+          ls -la *.svg || echo "No SVG files found!"
+          echo "--------------------------------------"
+
+          # Add files individually, checking if they exist to avoid crashing
+          [ -f stats.svg ] && git add stats.svg
+          [ -f languages.svg ] && git add languages.svg
+          [ -f streak.svg ] && git add streak.svg
+          [ -f achievements.svg ] && git add achievements.svg
           
-          # Check if there are actual changes
+          # Check for staged changes
           if git diff --staged --quiet; then
             echo "No changes to commit. Exiting."
             exit 0
           fi
           
-          # Commit locally
           git commit -m "Update GitHub statistics"
           
-          # CRITICAL: Rebase pulls remote changes (if any) and applies our commit on top
+          # Rebase and push
           git pull --rebase origin main
-          
-          # Push safely
           git push origin main
