@@ -109,7 +109,7 @@ jobs:
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          user: 0x5ubt13
+          user: "0x5ubt13"
           filename: achievements.svg
           base: ""
           plugin_achievements: yes
@@ -121,7 +121,7 @@ jobs:
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          user: 0x5ubt13
+          user: "0x5ubt13"
           filename: metrics.svg
           base: header, activity, community, repositories
           plugin_lines: yes
@@ -142,6 +142,6 @@ jobs:
           
           git diff --staged --quiet && { echo "No changes to commit"; exit 0; }
           
-          git commit -m "Update GitHub statistics [skip ci]"
+          git commit -m "Update GitHub statistics"
           git pull --rebase origin main || true
           git push origin main
