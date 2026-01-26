@@ -1,10 +1,12 @@
 name: Update GitHub Stats
+
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # Runs daily at midnight
   workflow_dispatch:
   push:
     branches: [main, master]
+
 jobs:
   update-stats:
     runs-on: ubuntu-latest
@@ -15,7 +17,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
-      
+
+      # ---------------------------------------------------------
+      # 1. GitHub Readme Stats (Stats & Languages)
+      # ---------------------------------------------------------
       - name: Generate Stats
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -24,7 +29,7 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
             username=${{ github.repository_owner }}&hide_title=false&hide_rank=true&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark
-      
+
       - name: Generate Languages
         uses: readme-tools/github-readme-stats-action@v1
         with:
@@ -32,115 +37,87 @@ jobs:
           path: languages.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=0x5ubt13&layout=compact&hide=html,scss&langs_count=5&theme=chartreuse-dark
-      
+            username=${{ github.repository_owner }}&layout=compact&langs_count=5&theme=chartreuse-dark
+
+      # ---------------------------------------------------------
+      # 2. Streak Stats (PHP Fix with .env)
+      # ---------------------------------------------------------
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: curl, gd, mbstring, xml
-          
-      - name: Generate Streak
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          USER: ${{ github.repository_owner }}
+
+      - name: Generate Streak SVG
         run: |
           rm -rf streak-repo
-          
           git clone --depth 1 https://github.com/DenverCoder1/github-readme-streak-stats.git streak-repo
           cd streak-repo
           composer install --no-dev --optimize-autoloader
-
-          # This forces the script to see the token, fixing the "Sad Emoji" error.
-          echo "$GITHUB_TOKEN" > .env
           
-          # Fix the vendor path in src/index.php
+          # Create .env to fix the "Sad Emoji" error
+          echo "TOKEN=${{ secrets.PAT_TOKEN }}" > .env
+          
           sed -i.bak '6s|.*vendor/autoload.*|require_once __DIR__ . "/../vendor/autoload.php";|' src/index.php
-          
-          # Create entry point
           cat > index.php << 'PHPEOF'
           <?php
           require_once __DIR__ . '/src/index.php';
           PHPEOF
           
-          # Start server
-          echo "Starting PHP server..."
+          # Start Server
           php -S 127.0.0.1:8000 > server.log 2>&1 &
           SERVER_PID=$!
           
-          # Wait for server with retries
-          echo "Waiting for server to be ready..."
+          # Wait for Server
           for i in {1..10}; do
             sleep 1
-            if curl -s http://127.0.0.1:8000 >/dev/null 2>&1; then
-              echo "Server ready on attempt $i"
-              break
-            fi
-            echo "Attempt $i: waiting..."
+            if curl -s http://127.0.0.1:8000 >/dev/null 2>&1; then break; fi
           done
           
-          # Additional wait
-          sleep 2
-          
           # Generate SVG
-          echo "Generating streak SVG..."
-          curl -o ../streak.svg "http://127.0.0.1:8000?user=$USER&theme=chartreuse-dark&mode=weekly&hide_border=false&date_format=M%20j%5B%2C%20Y%5D"          
-          # Check if it's a valid SVG
-          if [ -f ../streak.svg ] && head -1 ../streak.svg | grep -q "svg"; then
-            echo "✓ Streak SVG generated successfully"
-            ls -lh ../streak.svg
-          else
-            echo "✗ Generated file is not valid SVG"
-            echo "Content:"
-            cat ../streak.svg
-            echo ""
-            echo "Server log:"
-            cat server.log
-            kill $SERVER_PID
-            exit 1
-          fi
+          curl "http://127.0.0.1:8000?user=${{ github.repository_owner }}&theme=chartreuse-dark&mode=weekly&hide_border=false&date_format=M%20j%5B%2C%20Y%5D" -o ../streak.svg
           
           kill $SERVER_PID
           cd ..
           rm -rf streak-repo
-          
-      - name: Generate Achievements  
-        uses: lowlighter/metrics@latest
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          user: "0x5ubt13"
-          filename: achievements.svg
-          base: ""
-          plugin_achievements: yes
-          plugin_achievements_display: compact
-          plugin_achievements_threshold: C
-          config_timezone: UTC
-      
+
+      # ---------------------------------------------------------
+      # 3. Lowlighter Metrics (Base + Isocalendar)
+      # ---------------------------------------------------------
       - name: Generate Metrics
         uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          user: "0x5ubt13"
+          user: ${{ github.repository_owner }}
           filename: metrics.svg
-          base: header, activity, community, repositories
-          plugin_lines: yes
           config_timezone: UTC
-          
+          config_theme: dark
+          base: header, activity, community, repositories, metadata
+          output_action: none # Don't commit yet
+          # Enable Isocalendar (3D Calendar)
+          plugin_isocalendar: yes
+          plugin_isocalendar_duration: half-year
+          # Note: Achievements are disabled because they crash on "Projects Classic" deprecation
+
+      # ---------------------------------------------------------
+      # 4. Commit Everything
+      # ---------------------------------------------------------
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          echo "--- Generated files ---"
-          for file in stats.svg languages.svg streak.svg achievements.svg metrics.svg; do
-            if [ -f "$file" ] && [ -s "$file" ]; then
-              echo "$file: $(wc -c < "$file") bytes"
-              git add "$file"
-            fi
-          done
+          # Add all generated files (if they exist)
+          [ -f stats.svg ] && git add stats.svg
+          [ -f languages.svg ] && git add languages.svg
+          [ -f streak.svg ] && git add streak.svg
+          [ -f metrics.svg ] && git add metrics.svg
           
-          git diff --staged --quiet && { echo "No changes to commit"; exit 0; }
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
           
           git commit -m "Update GitHub statistics"
-          git pull --rebase origin main || true
+          git pull --rebase origin main
           git push origin main

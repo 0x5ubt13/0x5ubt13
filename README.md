@@ -23,10 +23,13 @@
 ###
 
 <div align="center">
-  <img src="./stats.svg" height="150" alt="stats graph" />
-  <img src="./languages.svg" height="150" alt="languages graph" />
-  <img src="./streak.svg" height="150" alt="streak graph" />
-  <img src="./achievements.svg" height="150" alt="achievements graph" />
+  <img src="./stats.svg" height="150" alt="Stats" />
+  <img src="./languages.svg" height="150" alt="Languages" />
+  <img src="./streak.svg" height="150" alt="Streak" />
+  
+  <br/>
+  
+  <img src="./metrics.svg" height="150" alt="Metrics" />
 </div>
 
 ###
