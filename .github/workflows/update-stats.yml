@@ -23,7 +23,7 @@ jobs:
           path: stats.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=0x5ubt13&hide_title=false&hide_rank=true&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark
+            username=${{ github.repository_owner }}&hide_title=false&hide_rank=true&show_icons=true&include_all_commits=true&count_private=true&theme=chartreuse-dark
       
       - name: Generate Languages
         uses: readme-tools/github-readme-stats-action@v1
@@ -43,12 +43,16 @@ jobs:
       - name: Generate Streak
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          USER: ${{ github.repository_owner }}
         run: |
           rm -rf streak-repo
           
           git clone --depth 1 https://github.com/DenverCoder1/github-readme-streak-stats.git streak-repo
           cd streak-repo
           composer install --no-dev --optimize-autoloader
+
+          # This forces the script to see the token, fixing the "Sad Emoji" error.
+          echo "$GITHUB_TOKEN" > .env
           
           # Fix the vendor path in src/index.php
           sed -i.bak '6s|.*vendor/autoload.*|require_once __DIR__ . "/../vendor/autoload.php";|' src/index.php
@@ -56,10 +60,6 @@ jobs:
           # Create entry point
           cat > index.php << 'PHPEOF'
           <?php
-          if ($token = getenv("GITHUB_TOKEN")) {
-              putenv("TOKEN=$token");
-              $_ENV['TOKEN'] = $token;
-          }
           require_once __DIR__ . '/src/index.php';
           PHPEOF
           
@@ -84,8 +84,7 @@ jobs:
           
           # Generate SVG
           echo "Generating streak SVG..."
-          curl -o ../streak.svg "http://127.0.0.1:8000?user=0x5ubt13&theme=chartreuse-dark&mode=weekly&hide_border=false&date_format=M%20j%5B%2C%20Y%5D"
-          
+          curl -o ../streak.svg "http://127.0.0.1:8000?user=$USER&theme=chartreuse-dark&mode=weekly&hide_border=false&date_format=M%20j%5B%2C%20Y%5D"          
           # Check if it's a valid SVG
           if [ -f ../streak.svg ] && head -1 ../streak.svg | grep -q "svg"; then
             echo "✓ Streak SVG generated successfully"
