@@ -25,11 +25,14 @@
 <div align="center">
   <img src="./stats.svg" height="150" alt="Stats" />
   <img src="./languages.svg" height="150" alt="Languages" />
+  <br/>
   <img src="./streak.svg" height="150" alt="Streak" />
   
   <br/>
+  <br/>
+  <br/>
   
-  <img src="./metrics.svg" height="150" alt="Metrics" />
+  <img src="./metrics.svg" alt="Metrics" />
 </div>
 
 ###
