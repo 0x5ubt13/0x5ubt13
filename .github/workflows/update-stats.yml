@@ -37,7 +37,7 @@ jobs:
           path: languages.svg
           token: ${{ secrets.PAT_TOKEN }}
           options: >-
-            username=${{ github.repository_owner }}&layout=compact&langs_count=5&theme=chartreuse-dark&hide=html,scss,javascript
+            username=${{ github.repository_owner }}&layout=compact&langs_count=5&theme=chartreuse-dark&hide=html,scss,javascript,jupyter
 
       # ---------------------------------------------------------
       # 2. Streak Stats (PHP Fix with .env)
