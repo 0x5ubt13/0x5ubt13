@@ -9,7 +9,7 @@
         aria-labelledby="descId"
       >
         <title id="titleId">Gabriel G.'s GitHub Stats, Rank: B</title>
-        <desc id="descId">Total Stars Earned: 52, Total Commits  : 2011, Total PRs: 10, Total Issues: 0, Contributed to (last year): 0</desc>
+        <desc id="descId">Total Stars Earned: 52, Total Commits  : 2026, Total PRs: 10, Total Issues: 0, Contributed to (last year): 1</desc>
         <style>
           .header {
             font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif;
@@ -73,7 +73,7 @@
         stroke-dashoffset: 251.32741228718345;
       }
       to {
-        stroke-dashoffset: 154.59019677227235;
+        stroke-dashoffset: 154.48270425352496;
       }
     }
   
@@ -211,7 +211,7 @@
         x="219.01"
         y="12.5"
         data-testid="contribs"
-      >0</text>
+      >1</text>
     </g>
   </g>
     </svg>
